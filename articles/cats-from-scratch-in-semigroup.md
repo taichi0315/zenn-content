@@ -89,10 +89,8 @@ Scalaの型クラスは主に以下の4つのコンポーネントによって�
 ### サンプルコードを用いた説明
 `implicit`修飾子を用いた引数を持つメソッドは以下のように定義します。
 ```scala
-scala> def showGreet(name: String)(implicit greet: String): Unit = {
-     |   println(s"$greet $name")
-     | }
-// def showGreet(name: String)(implicit greet: String): Unit
+scala> def showGreet(name: String)(implicit greet: String): String = s"$greet $name"
+// def showGreet(name: String)(implicit greet: String): String
 ```
 挨拶の文字列を表す`greet`引数は暗黙的に渡すため、`showGreet("name")`の形で、挨拶をする相手の名前のみを引数に与える事でメソッドを呼び出すことができます。
 
@@ -115,7 +113,7 @@ scala> implicit val hello: String = "Hello"
 再度、`showGreet`メソッドを呼んでみます。
 ```scala
 scala> showGreet("yaga")
-// Hello yaga
+// val res1: String = Hello yaga
 ```
 今度は正常にメソッドを呼び出す事ができました👏
 
@@ -156,10 +154,31 @@ implicit def foo[T]: Option[T] = ...
 implicit def foo[T](implicit a: T): Option[T] = ...
 ```
 
-その他説明が足りない部分もあるかとは思いますが、一旦次に進みます。
+## implicit conversion
+`implicit conversion`は`implicit`修飾子を持つメソッドの引数の型から返り値の型へと暗黙的な型変換を行う機能です。
+
+例として、`Int`型から`String`型への暗黙的な型変換を行うメソッドを定義します。
+```scala
+scala> implicit def intToString(a: Int): String = a.toString
+// def intToString(a: Int): String
+```
+
+そして受け取った`String`型の値をそのまま返すメソッドがあるとします。
+```scala
+scala> def receiveString(s: String): String = s
+// def receiveString(s: String): String
+```
+
+`receiveString`に`Int`型の値を渡してみます。通常は引数に与える型が`String`型ではないため,`type mismatch`エラーが発生しますが、`implicit conversion`によりコンパイルが通ります。
+```scala
+scala> receiveString(3)
+val res1: String = 3
+```
+
+`implicit conversion`は一見便利な機能に見えます。しかし、上記のようにコンパイルエラーを簡単にすり抜ける等の理由から、次に紹介する`Enrich my library`パターン以外での使用は、ずいぶん前から非推奨とされているようです。
 
 ## Enrich my libraryパターン
-
+`Enrich my library`パターンとは`implicit conversion`の機能を用いて、既存クラスの拡張を行う実装パターンです。
 
 # Additiveの実装
 まず最初にプロジェクトを立ち上げ、次に先ほど紹介した3つのコンポーネントを順に実装していきます。
