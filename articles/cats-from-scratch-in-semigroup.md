@@ -264,5 +264,57 @@ trait Additive[A] {
 `combine`メソッドは、`Additive`トレイトの型パラメータに与えられた型である2つの値を1つにまとめるメソッドです。最終的にテストコードで呼んでいる`|+|`メソッドは、`combine`メソッドのエイリアスになります。
 
 ## 2. implicit valueによる型クラスインスタンス定義
-次に`Additive[Int]`型のインスタンスを返す`implicit value`を実装します。
+次に`Additive[Int]`型のインスタンスを返す`implicit value`を実装します。今回`Int`型である2つの値を1つにまとめるのは加算であるとします。
+```scala:src/main/scala/tabby/instances/IntInstances.scala
+package tabby
+package instances
 
+trait IntInstances {
+  implicit val intAdditive: Additive[Int] = new Additive[Int] {
+    def combine(x: Int, y: Int): Int = x + y
+  }
+}
+```
+Catsでは`cats.instances`パッケージ下に、既存の型別に型クラスインスタンスを返す`implicit value`が定義されています。
+
+`IntInstances`トレイトで定義した`implicit value`を取り込みしやすくするために、以下のような`implicits`オブジェクトを作成します。
+```scala:src/main/scala/tabby/implicits.scala
+package tabby
+
+object implicits
+  extends instances.IntInstances
+```
+これにより、
+```scala
+import tabby.implicits._
+```
+を１行追加するだけで、`implicit value`をスコープ内に取り込む事ができるようになります。
+
+Catsを使用しているとおまじないのように追加する
+```scala
+import cats.implicits._
+```
+と同じ役割です。
+
+以上の`implicit value`により、`implicit parameter`に`Additive[Int]`型の値を渡す準備ができました。
+
+## 3. implicit parameterによるメソッド定義
+これまでの実装を用いて、console内で`implicit parameter`を用いたメソッドを動かしてみます。
+
+まず最初に`tabby.instances.IntInstances`内に定義されている`Additive[Int]`型のインスタンスを返す`implicit value`を取り込みます。
+```scala
+scala> import tabby.implicits._
+// import tabby.implicits._
+```
+次に`Additive[A]`型の`implicit value`を受け取る`implicit parameter`を用いた`combine`メソッドを定義します。
+```scala
+scala> import tabby.Additive
+// import tabby.Additive
+
+scala> def combine[A](x: A, y: A)(implicit aa: Additive[A]): A = {
+     |   aa.combine(x, y)
+     | }
+// def combine[A](x: A, y: A)(implicit aa: tabby.Additive[A]): A
+```
+
+実際に`combine`
