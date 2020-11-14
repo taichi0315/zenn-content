@@ -82,17 +82,17 @@ Scalaの型クラスは主に以下の4つのコンポーネントによって�
 ## implicit parameter
 `implicit parameter`は、メソッドやクラスの引数を暗黙的に渡す事ができる機能です。
 
-`implicit parameter`は暗黙的に渡したい引数グループに`implicit`修飾子をつける事で用います。
+`implicit parameter`は暗黙的に渡したい引数グループに`implicit`修飾子をつける事で使用します。
 
 そして`implicit`修飾子による引数に値を渡すためには、メソッドやクラスを呼び出す処理のスコープ内に、引数の型に対応した暗黙的な値（以下、`implicit value`）がただ一つ定義されている必要があります。
 
-### サンプルコードを用いた説明
+### サンプルコード
 `implicit`修飾子を用いた引数を持つメソッドは以下のように定義します。
 ```scala
 scala> def showGreet(name: String)(implicit greet: String): String = s"$greet $name"
 // def showGreet(name: String)(implicit greet: String): String
 ```
-挨拶の文字列を表す`greet`引数は暗黙的に渡すため、`showGreet("name")`の形で、挨拶をする相手の名前のみを引数に与える事でメソッドを呼び出すことができます。
+挨拶の文字列を表す`greet`引数は暗黙的に渡すため、`showGreet("hoge")`の形で、`name`引数のみでメソッドを呼び出すことができます。
 
 実際にメソッドを呼んでみましょう。
 ```scala
@@ -157,6 +157,7 @@ implicit def foo[T](implicit a: T): Option[T] = ...
 ## implicit conversion
 `implicit conversion`は`implicit`修飾子を持つメソッドの引数の型から返り値の型へと暗黙的な型変換を行う機能です。
 
+### サンプルコード
 例として、`Int`型から`String`型への暗黙的な型変換を行うメソッドを定義します。
 ```scala
 scala> implicit def intToString(a: Int): String = a.toString
@@ -165,23 +166,75 @@ scala> implicit def intToString(a: Int): String = a.toString
 
 そして受け取った`String`型の値をそのまま返すメソッドがあるとします。
 ```scala
-scala> def receiveString(s: String): String = s
-// def receiveString(s: String): String
+scala> def receiveString(a: String): String = a
+// def receiveString(a: String): String
 ```
 
 `receiveString`に`Int`型の値を渡してみます。通常は引数に与える型が`String`型ではないため,`type mismatch`エラーが発生しますが、`implicit conversion`によりコンパイルが通ります。
 ```scala
 scala> receiveString(3)
-val res1: String = 3
+// val res0: String = 3
 ```
 
 `implicit conversion`は一見便利な機能に見えます。しかし、上記のようにコンパイルエラーを簡単にすり抜ける等の理由から、次に紹介する`Enrich my library`パターン以外での使用は、ずいぶん前から非推奨とされているようです。
 
 ## Enrich my libraryパターン
-`Enrich my library`パターンとは`implicit conversion`の機能を用いて、既存クラスの拡張を行う実装パターンです。
+`Enrich my library`パターンとは`implicit conversion`の機能を用いて、既存クラスの拡張を行う実装パターンです。日本語では**拡張メソッド**という名前で呼ばれています。
 
-# Additiveの実装
-まず最初にプロジェクトを立ち上げ、次に先ほど紹介した3つのコンポーネントを順に実装していきます。
+### サンプルコード
+例として、既存の`Int`型の値に`show`メソッドを追加する実装を行っていきます。まず最初に`show`メソッドを定義している`ShowIntOps`クラスを定義します。
+```scala
+scala> class ShowIntOps(a: Int) {
+     |   def show: String = a.toString
+     | }
+// class ShowIntOps
+```
+次に`implciit conversion`を用いて、`Int`型の値を`ShowIntOps`クラスのインスタンスに型変換するメソッドを定義します。
+```scala
+scala> implicit def syntaxShowInt(a: Int): ShowIntOps = new ShowIntOps(a)
+// def syntaxShowInt(a: Int): ShowIntOps
+```
+
+では`show`メソッドを呼んでみましょう。
+```scala
+scala> 3.show
+// val res0: String = 3
+```
+以上のようにして、`Emrich my library`パターンによる既存クラスの拡張を行う事ができました。
+
+### implicit class
+`scala 2.10`以降ではクラス定義に`implicit`修飾子をつける事で、上記のサンプルコード実装をさらに簡潔に記述する事ができます。
+```scala
+scala> implicit class ShowIntOps(a: Int) {
+     |   def show: String = a.toString
+     | }
+// class ShowIntOps
+
+scala> 3.show
+// val res0: String = 3
+```
+
+`Enrich my library`パターンを実装する場合は、基本的に`implicit class`で良いかとは思いますが、`implicit class`を用いていないライブラリもあるようです（Catsライブラリの`cats.syntax`パッケージ内は`implicit class`を使用していなさそう）。そのためどちらの実装方法も読めるようにしておくと良いのかなと思いました。
+
+# Additive型クラスの実装
+型クラスを実装する準備が整ったので、いよいよ`Additive`型クラスを実装していきます。
+
+本記事のゴールであるテストコードを再度確認します。
+```scala
+...
+
+class OptionInstancesTest extends AnyFunSuite {
+  test("semigroup") {
+    assert((Option(3)  |+| Option(4)) == Option(7))
+    assert((Option(10) |+| Option(5)) == Option(15))
+  }
+}
+```
+正直なところ、`Option[Int]`型のインスタンスに`|+|`メソッドを追加するだけであれば、前節で説明した`Enrich my library`パターンのみを用いた簡単な実装ですぐにテストを通せます。
+
+しかし型クラスは、**アドホック多相を実現するデザインパターン**という説明にあるように**多相性**を持ち合わせている事が重要です。
+
+ここからはCatsライブラリの設計・実装を参考にしながら、`Additive`型クラスの実装を行っていきます。
 
 ## プロジェクト立ち上げ
 今回の実装環境は以下の通りです。
@@ -192,4 +245,24 @@ scala 2.13.3
 
 最初に`sbt new scala/scala-seed.g8`コマンドによって、シードプロジェクトを作成します。本記事ではproject名を猫繋がりで`tabby`（トラ猫）という名前にしています。
 
-## 型クラスの`trait`定義
+## 実装手順
+冒頭でも説明した以下の4つのコンポーネントを順番に実装していきます。
+1. `trait`による型クラス定義
+2. `implicit value`による型クラスインスタンス定義
+3. `implicit parameter`によるメソッド定義
+4. `Enrich my library`パターン（`implicit conversion`）によるクラス拡張
+
+## 1. traitによる型クラス定義
+`tabby`パッケージ以下に、`Additive`トレイトを定義します。
+```scala:src/main/scala/tabby/Additive.scala
+package tabby
+
+trait Additive[A] {
+  def combine(x: A, y: A): A
+}
+```
+`combine`メソッドは、`Additive`トレイトの型パラメータに与えられた型である2つの値を1つにまとめるメソッドです。最終的にテストコードで呼んでいる`|+|`メソッドは、`combine`メソッドのエイリアスになります。
+
+## 2. implicit valueによる型クラスインスタンス定義
+次に`Additive[Int]`型のインスタンスを返す`implicit value`を実装します。
+
