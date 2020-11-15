@@ -70,7 +70,7 @@ class Option[T](value: T) extends Additive[Option[T]] {
 ## Scalaにおける型クラス
 Scalaでは`implicit`の機能を用いることによって、型クラスを実装できます。
 
-Scalaの型クラスは主に以下の4つのコンポーネントによって実装することができます。
+Scalaにおける型クラスは主に以下の4つのコンポーネントによって実装することができます。
 1. `trait`による型クラス定義
 2. `implicit value`による型クラスインスタンス定義
 3. `implicit parameter`によるメソッド定義
@@ -247,7 +247,7 @@ scala 2.13.3
 最初に`sbt new scala/scala-seed.g8`コマンドによって、シードプロジェクトを作成します。本記事ではproject名を猫繋がりで`tabby`（トラ猫）という名前にしています。
 
 ## 実装手順
-型クラスは以下の4つのコンポーネントによって実装ができます。
+再掲になりますが、型クラスは以下の4つのコンポーネントによって実装ができます。
 1. `trait`による型クラス定義
 2. `implicit value`による型クラスインスタンス定義
 3. `implicit parameter`によるメソッド定義
@@ -372,7 +372,7 @@ scala> 3 |+| 4
 意図した通りに動いているようです。
 
 ## Additive[Option[A]]
-本題である`|+|`メソッドを`Option[A]`型に追加する実装を行っていきます。
+本題である、`|+|`メソッドを`Option[A]`型に追加する実装を行っていきます。
 
 型クラスを一度作成してしまえば、その他の型を型クラスに含めるのはとても簡単です。
 
@@ -405,7 +405,7 @@ trait OptionInstances {
 型パラメータとして受け取っている型`A`が`Additive`型クラスに含まれている必要がある実装になっています。言い換えると「`A`が`Additive`型クラスに含まれていれば`Option[A]`も`Additive`型クラスに含まれる」といったような宣言です。
 
 :::message
-実際のCatsライブラリで上記のような`implicit parameter`を持つ`implicit value`の実装をみると`context bound`と呼ばれる糖衣構文によって書かれている事が多いです。本記事では説明を省略しますが、興味のある方は調べてみてください。
+実際のCatsライブラリで上記のような`implicit parameter`を持つ`implicit value`の実装をみると、`context bound`と呼ばれる糖衣構文によって書かれている事が多いです。本記事では説明を省略しますが、興味のある方は調べてみてください。
 :::
 
 最後に、`OptionInstances`を`tabby.implicits`オブジェクトに継承します。
@@ -444,17 +444,19 @@ sbt:tabby> test
 テストを通す事ができました🙌
 
 # おわりに
-今回はCatsライブラリの基礎となる型クラスについての説明を行っていきました。先人の方々の説明資料に比べると少々冗長になってしまったかなと思いもありつつ、自分なりに勉強した内容を丁寧にアウトプットできたかなと思っています。
+今回はCatsライブラリの基礎となる型クラスについての説明を行っていきました。
+
+先人の方々の説明資料に比べると少々冗長になってしまったかなと思いもありつつ、自分なりに勉強した内容を丁寧にアウトプットできたかなと思っています。
 
 繰り返しになりますが、誤っている点等あればコメントいただけると嬉しいです🙇‍♂️
 
 モチベーション次第ですが、できれば今後もシリーズとして書いていきたいです。シリーズでやるのであれば次回は`Monoid`型クラスについてですね。
 
-最後まで呼んでいただきありがとうございました！
+最後まで読んでいただきありがとうございました！
 
 # 参考資料
-かなり多いのでトグルにしました。どの資料もとても参考になりました。
-:::details 参考資料
+かなり多いですが、どの資料もとても参考になったので以下にまとめます。
+
 https://github.com/typelevel/cats
 https://www.scalawithcats.com/dist/scala-with-cats.html
 https://www2.slideshare.net/AoiroAoino/scala-79575940
@@ -463,4 +465,4 @@ https://gakuzzzz.github.io/slides/implicit_reintroduction/#1
 https://kmizu.hatenablog.com/entry/2017/05/19/074149
 https://www2.slideshare.net/MakotoFukuhara/scala-56310825
 http://chopl.in/post/2012/11/06/introduction-to-typeclass-with-scala/
-:::
+http://blog.takeda-soft.jp/blog/show/396.html
