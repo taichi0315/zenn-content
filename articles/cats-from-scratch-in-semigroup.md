@@ -3,17 +3,19 @@ title: "ゼロから作るCatsライブラリ ~ 型クラス編 ~"
 emoji: "🐱"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["Scala"]
-published: false
+published: true
 ---
 
 # はじめに
 はじめまして。やがです。普段はScalaを用いて保育園の業務支援SaaSの開発をしています。
 Zennは初投稿になります💪
 
-筆者は関数型プログラミングに入門したばかりであるため、なるべく誤りがないよう試行錯誤しながら記事を書いていますが、もし誤っている点等があればコメントで指摘していただけるととても嬉しいです。
+筆者は関数型プログラミングに入門したばかりであるため、なるべく誤りがないよう試行錯誤しながら記事を書いていますが、もし誤っている点等があればコメントをいただけるととても嬉しいです。
 
 ## Catsライブラリの概要
-CatsライブラリはScala言語で使用することができる関数型プログラミングライブラリです。名前の由来は圏(*category*)の省略系であると公式ドキュメントに書かれています。関数型プログラミングに大きな影響を与えている圏論との繋がりを感じますね。
+CatsライブラリはScala言語で使用することができる関数型プログラミングライブラリです。
+
+名前の由来は圏(*category*)の省略系であると公式ドキュメントに書かれています。関数型プログラミングに大きな影響を与えている圏論との繋がりを感じますね。
 
 Catsライブラリには関数型プログラミングのツールのようなものが多く用意されています。そしてこれらのツールの大部分は型クラスと呼ばれるプログラミングパターンで実装されています。
 
@@ -36,7 +38,9 @@ class OptionInstancesTest extends AnyFunSuite {
 
 以上のテストでは、`Option[Int]`型である2つの値を、`|+|`メソッドにより1つの値にまとめています。**まとめる**と書きましたが、具体的には2つの`Option[Int]型`の値が内包する`Int`型の値を加算した結果を、1つの`Option[Int]`型に包んで返すというシンプルな処理です。
 
-`|+|`メソッドはScala標準ライブラリには実装されておらず、Scalaの標準ライブラリのみでは以上のテストは通りません。本記事では`|+|`メソッドを提供する`Additive`という名前の型クラスをゼロから実装していきます。
+`|+|`メソッドはScala標準ライブラリには実装されておらず、Scalaの標準ライブラリのみでは以上のテストは通りません。
+
+本記事では`|+|`メソッドを提供する`Additive`という名前の型クラスをゼロから実装していきます。
 
 :::message
 Catsライブラリにおいて`|+|`メソッドは、`Semigroup`や`Monoid`といった型クラスによって提供されますが、本記事ではそれらの詳しい説明は省略します。
@@ -44,9 +48,11 @@ Catsライブラリにおいて`|+|`メソッドは、`Semigroup`や`Monoid`と�
 
 # 型クラスとは
 ## 型クラスの概要
-型クラスとはHaskellに由来するプログラミングパターンです。型クラスは既存のプリミティブ型や標準ライブラリ等のソースコードに変更を加えることなく、新しい機能を拡張して追加することができます。
+型クラスとはHaskellに由来するプログラミングパターンです。
 
-テストコードを例に挙げると、`Option[Int]`型のインスタンスに`|+|`メソッドを用意するためには、通常の`trait`を用いると以下のような実装イメージになるかと思います。（あくまでイメージです。）
+型クラスは既存のプリミティブ型や標準ライブラリ等のソースコードに変更を加えることなく、新しい機能を拡張して追加することができます。
+
+テストコードを例に挙げると、`Option[T]`型のインスタンスに`|+|`メソッドを用意するためには、通常の`trait`を用いると以下のような実装イメージになるかと思います。（あくまでイメージです。）
 
 ```scala
 trait Additive[A] {
@@ -173,7 +179,7 @@ scala> def receiveString(a: String): String = a
 // def receiveString(a: String): String
 ```
 
-`receiveString`に`Int`型の値を渡してみます。通常は引数に与える型が`String`型ではないため,`type mismatch`エラーが発生しますが、`implicit conversion`によりコンパイルが通ります。
+`receiveString`メソッドに`Int`型の値を渡してみます。通常は引数に与える型が`String`型ではないため,`type mismatch`エラーが発生しますが、`implicit conversion`によりコンパイルが通ります。
 ```scala
 scala> receiveString(3)
 // val res0: String = 3
@@ -217,7 +223,9 @@ scala> 3.show
 // val res0: String = 3
 ```
 
-`Enrich my library`パターンを実装する場合は、基本的に`implicit class`で良いかとは思いますが、`implicit class`を用いていないライブラリもあるようです（Catsライブラリの`cats.syntax`パッケージ内は`implicit class`を使用していなさそう）。そのためどちらの実装方法も読めるようにしておくと良いのかなと思いました。
+`Enrich my library`パターンを実装する場合は、基本的に`implicit class`で良いかとは思いますが、`implicit class`を用いていないライブラリもあるようです（Catsライブラリの`cats.syntax`パッケージ内は`implicit class`を使用していなさそう）。
+
+そのためどちらの実装方法も読めるようにしておくと良いのかなと思いました。
 
 # Additive型クラスの実装
 型クラスを実装する準備が整ったので、いよいよ`Additive`型クラスを実装していきます。
@@ -268,7 +276,7 @@ trait Additive[A] {
 `combine`メソッドは、`Additive`トレイトの型パラメータに与えられた型である2つの値を1つにまとめるメソッドです。最終的にテストコードで呼んでいる`|+|`メソッドは、`combine`メソッドのエイリアスになります。
 
 ### implicit valueによる型クラスインスタンス定義
-次に`Additive[Int]`型のインスタンスを返す`implicit value`を実装します。今回`Int`型である2つの値を1つにまとめる処理は加算であるとします。
+次に`Additive[Int]`型のインスタンスを返す`implicit value`を実装します。本記事では`Int`型である2つの値を1つにまとめる処理は加算であるとします。
 ```scala:src/main/scala/tabby/instances/IntInstances.scala
 package tabby
 package instances
@@ -279,7 +287,7 @@ trait IntInstances {
   }
 }
 ```
-Catsでは`cats.instances`パッケージ下に、既存の型別に型クラスインスタンスを返す`implicit value`が定義されています。
+Catsライブラリでは`cats.instances`パッケージ下に、既存の型別に型クラスインスタンスを返す`implicit value`が定義されています。
 
 `IntInstances`トレイトで定義した`implicit value`を取り込みしやすくするために、以下のような`implicits`オブジェクトを作成します。
 ```scala:src/main/scala/tabby/implicits.scala
@@ -294,7 +302,7 @@ import tabby.implicits._
 ```
 を1行追加するだけで、`implicit value`をスコープ内に取り込む事ができるようになります。
 
-Catsを使用しているとおまじないのように追加する
+Catsライブラリを使用しているとおまじないのように追加する
 ```scala
 import cats.implicits._
 ```
@@ -383,7 +391,7 @@ scala> 3 |+| 4
 4. ~~`Enrich my library`パターン（`implicit conversion`）によるクラス拡張~~
 
 ### implicit valueによる型クラスインスタンス定義
-では、`Additive[Option[Int]]`型のインスタンスを返す`implicit value`を定義します。
+では、`Additive[Option[A]]`型のインスタンスを返す`implicit value`を定義します。
 ```scala:src/main/scala/tabby/instances/OptionInstances.scala
 package tabby
 package instances
@@ -402,7 +410,9 @@ trait OptionInstances {
   }
 }
 ```
-型パラメータとして受け取っている型`A`が`Additive`型クラスに含まれている必要がある実装になっています。言い換えると「`A`が`Additive`型クラスに含まれていれば`Option[A]`も`Additive`型クラスに含まれる」といったような宣言です。
+型パラメータとして受け取っている型`A`が`Additive`型クラスに含まれている必要がある実装になっています。
+
+言い換えると「`A`が`Additive`型クラスに含まれていれば`Option[A]`も`Additive`型クラスに含まれる」といったような宣言です。
 
 :::message
 実際のCatsライブラリで上記のような`implicit parameter`を持つ`implicit value`の実装をみると、`context bound`と呼ばれる糖衣構文によって書かれている事が多いです。本記事では説明を省略しますが、興味のある方は調べてみてください。
@@ -446,9 +456,9 @@ sbt:tabby> test
 # おわりに
 今回はCatsライブラリの基礎となる型クラスについての説明を行っていきました。
 
-先人の方々の説明資料に比べると少々冗長になってしまったかなと思いもありつつ、自分なりに勉強した内容を丁寧にアウトプットできたかなと思っています。
+先人の方々の説明資料に比べると少々冗長になってしまったかなと思いもありつつ、勉強した内容を自分なりに丁寧にアウトプットできたかなと思っています。
 
-繰り返しになりますが、誤っている点等あればコメントいただけると嬉しいです🙇‍♂️
+繰り返しになりますが、誤っている点等あればコメントをいただけると嬉しいです🙇‍♂️
 
 モチベーション次第ですが、できれば今後もシリーズとして書いていきたいです。シリーズでやるのであれば次回は`Monoid`型クラスについてですね。
 
