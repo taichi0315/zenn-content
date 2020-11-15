@@ -442,3 +442,25 @@ sbt:tabby> test
 [success] Total time: 1 s, completed 2020/11/15 16:36:29
 ```
 テストを通す事ができました🙌
+
+# おわりに
+今回はCatsライブラリの基礎となる型クラスについての説明を行っていきました。先人の方々の説明資料に比べると少々冗長になってしまったかなと思いもありつつ、自分なりに勉強した内容を丁寧にアウトプットできたかなと思っています。
+
+繰り返しになりますが、誤っている点等あればコメントいただけると嬉しいです🙇‍♂️
+
+モチベーション次第ですが、できれば今後もシリーズとして書いていきたいです。シリーズでやるのであれば次回は`Monoid`型クラスについてですね。
+
+最後まで呼んでいただきありがとうございました！
+
+# 参考資料
+かなり多いのでトグルにしました。どの資料もとても参考になりました。
+:::details 参考資料
+https://github.com/typelevel/cats
+https://www.scalawithcats.com/dist/scala-with-cats.html
+https://www2.slideshare.net/AoiroAoino/scala-79575940
+https://scala-text.github.io/scala_text/implicit.html
+https://gakuzzzz.github.io/slides/implicit_reintroduction/#1
+https://kmizu.hatenablog.com/entry/2017/05/19/074149
+https://www2.slideshare.net/MakotoFukuhara/scala-56310825
+http://chopl.in/post/2012/11/06/introduction-to-typeclass-with-scala/
+:::
