@@ -27,7 +27,7 @@ Catsライブラリには関数型プログラミングのツールのような�
 ...
 
 class OptionInstancesTest extends AnyFunSuite {
-  test("semigroup") {
+  test("additive") {
     assert((Option(3)  |+| Option(4)) == Option(7))
     assert((Option(10) |+| Option(5)) == Option(15))
   }
@@ -64,6 +64,8 @@ class Option[T](value: T) extends Additive[Option[T]] {
 より専門的な言葉を用いると、**アドホック多相を実現するデザインパターン**といったような説明が正しいように学んでいます。
 
 **アドホック**という単語は「臨時の・暫定的な・場当たり的な」といったような意味を持つようなので、既に定義されているクラスに対しても**場当たり的に**何らかの特性（型クラス）を追加する事ができるといった認識です。
+
+また**多相**という単語は、**多態**や**ポリモーフィズム**という言葉でも言い換えられるかと思います。**多相性**に関しては関数型プログラミングに留まらない概念であるため、本記事での説明は省略します。
 
 ## Scalaにおける型クラス
 Scalaでは`implicit`の機能を用いることによって、型クラスを実装できます。
@@ -153,6 +155,7 @@ implicit def foo[T]: Option[T] = ...
 ```scala
 implicit def foo[T](implicit a: T): Option[T] = ...
 ```
+その他`implicit object`等、説明できていない部分もあるとは思いますが、本記事では省略します。
 
 ## implicit conversion
 `implicit conversion`は`implicit`修飾子を持つメソッドの引数の型から返り値の型へと暗黙的な型変換を行う機能です。
@@ -224,7 +227,7 @@ scala> 3.show
 ...
 
 class OptionInstancesTest extends AnyFunSuite {
-  test("semigroup") {
+  test("additive") {
     assert((Option(3)  |+| Option(4)) == Option(7))
     assert((Option(10) |+| Option(5)) == Option(15))
   }
@@ -232,9 +235,7 @@ class OptionInstancesTest extends AnyFunSuite {
 ```
 正直なところ、`Option[Int]`型のインスタンスに`|+|`メソッドを追加するだけであれば、前節で説明した`Enrich my library`パターンのみを用いた簡単な実装ですぐにテストを通せます。
 
-しかし型クラスは、**アドホック多相を実現するデザインパターン**という説明にあるように**多相性**を持ち合わせている事が重要です。
-
-ここからはCatsライブラリの設計・実装を参考にしながら、`Additive`型クラスの実装を行っていきます。
+では型クラスによって場当たり的に、かつ多相性を持つ`|+|`メソッドを追加できるようにするには何が違うのか。Catsライブラリを参考にしながら、実際に`Addtivie`型クラスを実装していきます。
 
 ## プロジェクト立ち上げ
 今回の実装環境は以下の通りです。
@@ -246,13 +247,16 @@ scala 2.13.3
 最初に`sbt new scala/scala-seed.g8`コマンドによって、シードプロジェクトを作成します。本記事ではproject名を猫繋がりで`tabby`（トラ猫）という名前にしています。
 
 ## 実装手順
-冒頭でも説明した以下の4つのコンポーネントを順番に実装していきます。
+型クラスは以下の4つのコンポーネントによって実装ができます。
 1. `trait`による型クラス定義
 2. `implicit value`による型クラスインスタンス定義
 3. `implicit parameter`によるメソッド定義
 4. `Enrich my library`パターン（`implicit conversion`）によるクラス拡張
 
-## 1. traitによる型クラス定義
+本記事では、最初に`Additive[Int]`を実装した後に、`Additive[Option[A]]`を実装していきます。
+
+## Additive[Int]
+### traitによる型クラス定義
 `tabby`パッケージ以下に、`Additive`トレイトを定義します。
 ```scala:src/main/scala/tabby/Additive.scala
 package tabby
@@ -263,8 +267,8 @@ trait Additive[A] {
 ```
 `combine`メソッドは、`Additive`トレイトの型パラメータに与えられた型である2つの値を1つにまとめるメソッドです。最終的にテストコードで呼んでいる`|+|`メソッドは、`combine`メソッドのエイリアスになります。
 
-## 2. implicit valueによる型クラスインスタンス定義
-次に`Additive[Int]`型のインスタンスを返す`implicit value`を実装します。今回`Int`型である2つの値を1つにまとめるのは加算であるとします。
+### implicit valueによる型クラスインスタンス定義
+次に`Additive[Int]`型のインスタンスを返す`implicit value`を実装します。今回`Int`型である2つの値を1つにまとめる処理は加算であるとします。
 ```scala:src/main/scala/tabby/instances/IntInstances.scala
 package tabby
 package instances
@@ -288,7 +292,7 @@ object implicits
 ```scala
 import tabby.implicits._
 ```
-を１行追加するだけで、`implicit value`をスコープ内に取り込む事ができるようになります。
+を1行追加するだけで、`implicit value`をスコープ内に取り込む事ができるようになります。
 
 Catsを使用しているとおまじないのように追加する
 ```scala
@@ -298,10 +302,10 @@ import cats.implicits._
 
 以上の`implicit value`により、`implicit parameter`に`Additive[Int]`型の値を渡す準備ができました。
 
-## 3. implicit parameterによるメソッド定義
+### implicit parameterによるメソッド定義
 これまでの実装を用いて、console内で`implicit parameter`を用いたメソッドを動かしてみます。
 
-まず最初に`tabby.instances.IntInstances`内に定義されている`Additive[Int]`型のインスタンスを返す`implicit value`を取り込みます。
+まず最初に`tabby.instances.IntInstances`トレイト内に定義されている`Additive[Int]`型のインスタンスを返す`implicit value`を取り込みます。
 ```scala
 scala> import tabby.implicits._
 // import tabby.implicits._
@@ -316,5 +320,125 @@ scala> def combine[A](x: A, y: A)(implicit aa: Additive[A]): A = {
      | }
 // def combine[A](x: A, y: A)(implicit aa: tabby.Additive[A]): A
 ```
+実際に`combine`メソッドを呼んでみましょう。
+```scala
+scala> combine[Int](3, 4)
+// val res0: Int = 7
+```
+`implicit parameter`を用いて、`Additive[Int]`型の`implicit value`が持つ`combine`メソッドを呼ぶ事ができました。
 
-実際に`combine`
+しかしこのままでは`combine`メソッドに毎回型パラメータを与える等、少々使いにくい部分があるので、`Enrich my library`パターンを用いて`Int`型のインスタンスに`combine`メソッドを追加します。
+
+### Enrich my libraryパターン（implicit conversion）によるクラス拡張
+Catsライブラリでは、既存の型のインスタンスを拡張する`Enrich my library`パターンは、`cats.syntax`パッケージ下に実装されています。
+
+`Int`型に`combine`メソッドを追加するのは以下にような実装になります。
+```scala:src/main/scala/tabby/syntax/additive.scala
+package tabby
+package syntax
+
+trait AdditiveSyntax {
+  implicit final class AdditiveOps[A](lhs: A) {
+    def |+|(rhs: A)(implicit aa: Additive[A]): A = combine(rhs)
+    def combine(rhs: A)(implicit aa: Additive[A]): A = aa.combine(lhs, rhs)
+  }
+}
+```
+Catsライブラリでは、`implciit class`を用いずに`Enrich my library`パターンが実装されているのですが、本記事では簡単のため`implicit class`を用いています。
+
+また`combine`メソッドのエイリアスである`|+|`メソッドも追加しています。
+
+次に`tabby.syntax`以下の`implicit`定義も取り込みやすくなるよう、`tabby.implicits`オブジェクトを修正します。
+```scala:src/main/scala/tabby/implicits.scala
+package tabby
+
+object implicits
+  extends syntax.AdditiveSyntax
+  with instances.IntInstances
+```
+
+以上で、`Int`型のインスタンスに`|+|`メソッドを追加する事ができました。consoleで確かめてみましょう。
+```scala
+scala> import tabby.implicits._
+// import tabby.implicits._
+
+scala> 3 combine 4
+// val res0: Int = 7
+
+scala> 3 |+| 4
+// val res1: Int = 7
+```
+
+意図した通りに動いているようです。
+
+## Additive[Option[A]]
+本題である`|+|`メソッドを`Option[A]`型に追加する実装を行っていきます。
+
+型クラスを一度作成してしまえば、その他の型を型クラスに含めるのはとても簡単です。
+
+具体的には4つのコンポーネントのうち、`Additive[Option[Int]]`型のインスタンスを返す`implicit value`を新たに追加するだけです。
+1. ~~`trait`による型クラス定義~~
+2. `implicit value`による型クラスインスタンス定義
+3. ~~`implicit parameter`によるメソッド定義~~
+4. ~~`Enrich my library`パターン（`implicit conversion`）によるクラス拡張~~
+
+### implicit valueによる型クラスインスタンス定義
+では、`Additive[Option[Int]]`型のインスタンスを返す`implicit value`を定義します。
+```scala:src/main/scala/tabby/instances/OptionInstances.scala
+package tabby
+package instances
+
+trait OptionInstances {
+  implicit def optionAdditive[A](implicit aa: Additive[A]): Additive[Option[A]] = new Additive[Option[A]] {
+    def combine(x: Option[A], y: Option[A]): Option[A] =
+      x match {
+        case None    => y
+        case Some(a) =>
+          y match {
+            case None    => x
+            case Some(b) => Some(aa.combine(a, b))
+          }
+      }
+  }
+}
+```
+型パラメータとして受け取っている型`A`が`Additive`型クラスに含まれている必要がある実装になっています。言い換えると「`A`が`Additive`型クラスに含まれていれば`Option[A]`も`Additive`型クラスに含まれる」といったような宣言です。
+
+:::message
+実際のCatsライブラリで上記のような`implicit parameter`を持つ`implicit value`の実装をみると`context bound`と呼ばれる糖衣構文によって書かれている事が多いです。本記事では説明を省略しますが、興味のある方は調べてみてください。
+:::
+
+最後に、`OptionInstances`を`tabby.implicits`オブジェクトに継承します。
+```scala:src/main/scala/tabby/implicits.scala
+package tabby
+
+object implicits
+  extends syntax.SemigroupSyntax
+  with instances.IntInstances
+  with instances.OptionInstances
+```
+これでテストを通す全ての準備ができました。
+
+## テスト
+では最後にテストを通していきます。
+```scala:src/test/scala/tabby/instances/OptionInstancesTest.scala
+package tabby.instances
+
+import org.scalatest.funsuite.AnyFunSuite
+import tabby.implicits._
+
+class OptionInstancesTest extends AnyFunSuite {
+  test("additive") {
+    assert((Option(3)  |+| Option(4)) == Option(7))
+    assert((Option(10) |+| Option(5)) == Option(15))
+  }
+}
+```
+`import tabby.implicits._`を忘れないように気をつけます。
+```scala
+sbt:tabby> test
+...
+[info] All tests passed.
+[success] Total time: 1 s, completed 2020/11/15 16:36:29
+```
+テストを通す事ができました🙌
