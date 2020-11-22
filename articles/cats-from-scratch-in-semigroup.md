@@ -3,7 +3,7 @@ title: "ゼロから作るCatsライブラリ ~ implicit編 ~"
 emoji: "🐱"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["Scala"]
-published: false
+published: true
 ---
 
 # はじめに
@@ -19,15 +19,15 @@ CatsライブラリはScala言語で使用することができる関数型プ�
 
 Catsライブラリには関数型プログラミングのツールのようなものが多く用意されています。そしてこれらのツールの大部分は型クラスと呼ばれるプログラミングパターンで実装されています。
 
-本記事ではその型クラスをScala言語で実装するための、`implicit`の機能と実装パターンについてサンプルコードを交えて紹介をしていきます。
-
-`implicit`は「暗黙的な」というような意味を持つ単語になります。
-
 :::message
 本記事では型クラスに関する説明は省略します。
 :::
 
 ## 本記事の内容
+本記事は型クラスをScala言語で実装するための、`implicit`の機能と実装パターンについてサンプルコードを交えて紹介をしていきます。
+
+`implicit`は「暗黙的な」というような意味を持つ単語になります。
+
 本記事で紹介する、Scala言語の`implicit`の機能と実装パターンのは以下の3つです。
 - `implicit parameter`
 - `implicit conversion`
@@ -71,7 +71,7 @@ scala> implicit val hello: String = "Hello"
 scala> showGreet("yaga")
 // val res0: String = Hello yaga
 ```
-今度は正常にメソッドを呼び出す事ができました👏
+今度は正常にメソッドを呼び出す事ができました。
 
 以上が`implicit parameter`の機能の概要となります。
 
